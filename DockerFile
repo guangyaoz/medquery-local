@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+# Install curl and jq for the entrypoint script
+RUN apt-get update && apt-get install -y curl jq
+
+# Set the working directory
+WORKDIR /app
+
+# Copy requirements and install python packages
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application, including the new script
+COPY . .
+
+# Make the entrypoint script executable
+RUN chmod +x entrypoint.sh
+
+# Set the entrypoint script as the command to run when the container starts
+ENTRYPOINT ["./entrypoint.sh"]

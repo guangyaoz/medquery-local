@@ -1,0 +1,5 @@
+pandas
+langchain
+langchain-community
+ollama
+SQLAlchemy
