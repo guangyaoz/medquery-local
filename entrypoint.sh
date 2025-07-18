@@ -23,6 +23,5 @@ else
     echo "Model pull complete."
 fi
 
-# --- Start the Python Application ---
-echo "Starting Python application..."
-exec python main.py
+# Execute the command passed to this script (e.g., streamlit run app.py)
+exec "$@"

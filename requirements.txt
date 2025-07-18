@@ -1,5 +1,7 @@
+streamlit
 pandas
 langchain
 langchain-community
-ollama
-SQLAlchemy
+langchain-ollama
+SQLAlchemy==2.0.30
+tabulate

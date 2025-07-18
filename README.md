@@ -1,51 +1,99 @@
-# 🩺 MedQuery Local: LLM-Powered EHR Query Tool
+# MedQuery Local 🩺
 
-MedQuery Local is a powerful, privacy-focused AI agent that allows you to ask complex questions about your medical data using natural language. It runs entirely on your local machine using Docker and Ollama, ensuring your data never leaves your computer.
+### A local, private, GPU-accelerated application for querying your health data with natural language.
 
-The setup is fully automated. On the first run, the application will automatically download the required LLM model and then start the interactive query session.
+This project provides a web-based user interface, powered by Streamlit, to upload your own Electronic Health Record (EHR) data from a CSV file. It uses a locally-hosted Large Language Model (LLM) served by Ollama to create a powerful AI agent. This agent can understand questions asked in plain English, convert them into SQL queries, and give you back answers based on your data.
 
-## Key Features
+Your data never leaves your machine, ensuring 100% privacy.
 
-* **100% Local**: All components, including the Large Language Model, run locally.
-* **Privacy First**: Your data is never uploaded to a third-party service.
-* **Natural Language Queries**: Ask questions in plain English instead of writing complex SQL or code.
-* **Automated Setup**: The required LLM model is automatically downloaded on the first launch.
-* **Dockerized**: The entire application is containerized for a clean, one-command setup.
+## Features
 
----
-## Tech Stack
+  * **Private & Local:** Your data is processed entirely on your machine and is never sent to a third-party API.
+  * **Natural Language Queries:** Ask complex questions like "How many patients have an average health expense over $5000?" instead of writing SQL code.
+  * **GPU Accelerated:** Uses Ollama to run powerful open-source LLMs (like Llama 3, Gemma 2) on your local NVIDIA GPU for fast performance.
+  * **Easy Setup:** The entire application stack is managed by Docker Compose and runs with a single command.
+  * **Swappable Models:** Easily switch between different LLMs by changing just two lines of code.
 
-* **Orchestration**: Docker, Docker Compose
-* **LLM Serving**: Ollama
-* **AI Framework**: LangChain
-* **Backend**: Python
-* **Model**: Llama3
+## Architecture
 
----
-## Setup and Installation
+The application runs as a multi-container setup managed by Docker Compose:
 
-### Prerequisites
+```
+[User] <--> [Web Browser] <--> [Streamlit Container (medquery-app)] <--> [Ollama Container (ollama)] <--> [NVIDIA GPU]
+```
 
-You only need **Docker**  installed on your system.
+1.  The **Ollama Container** downloads and serves the LLM, accessing the host's GPU for acceleration.
+2.  The **Streamlit Container** runs the Python web application, waits for Ollama to be ready, and automatically pulls the required model before starting the UI.
 
-### Step 1: Clone the Repository
+## Prerequisites
 
-Open your terminal and clone the project repository from GitHub.
+Before you begin, ensure you have the following installed on your host machine:
 
-### Step 2: Add Your Data
+  * [Docker](https://www.docker.com/products/docker-desktop/)
+  * An **NVIDIA GPU** with sufficient VRAM for the chosen model (at least 8GB recommended).
+  * The latest [NVIDIA Drivers](https://www.nvidia.com/download/index.aspx) for your operating system.
+  * The [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html), which allows Docker to access the GPU.
 
-Place all of your clinical data CSV files (e.g., patients.csv, encounters.csv) inside the ./data folder.
+## Installation & Running
 
-### Step 3: Build
+1.  **Get the Project Files**
+    Clone this repository or ensure you have the following files in a single directory:
 
-Run a single command from your project's root directory to build and start everything:
+      * `docker-compose.yml`
+      * `Dockerfile`
+      * `entrypoint.sh`
+      * `app.py`
+      * `requirements.txt`
 
-<code>docker-compose up --build</code>
+2.  **Start the Application**
+    Open a terminal in the project's root directory and run the following command:
 
-### Step 4: Run
+    ```bash
+    docker-compose up --build
+    ```
 
-Run this command to start an interactive section to chat with the agent. 
+    The first time you run this, it will:
 
-<code>docker-compose run --rm app</code>
+      * Build the `medquery-app` Docker image.
+      * Pull the official `ollama` image.
+      * Start both containers.
+      * The `medquery-app` will wait for the Ollama server and then automatically run `ollama pull` to download the language model (e.g., `llama3`). This may take several minutes.
 
-To stop the application, enter "exit" into the chatbox.
+3.  **Access the UI**
+    Once you see the "Starting Streamlit application..." message in your terminal, open your web browser and navigate to:
+    [**http://localhost:8501**](https://www.google.com/search?q=http://localhost:8501)
+
+## How to Use
+
+1.  In the web UI, use the sidebar to **upload a CSV file** containing your EHR data.
+2.  Click the **"Load Data"** button. The application will load your data into a temporary, in-memory SQL database.
+3.  Once the data is loaded, you can **ask questions** in the chat input box at the bottom of the page and press Enter. The agent will show its work in the terminal and display the final answer in the UI.
+
+## Customization: How to Change the LLM
+
+This project is configured to use `llama3` by default, but you can easily switch to another model like Google's `gemma2:9b`.
+
+1.  **In `entrypoint.sh`**, change the `MODEL_NAME` variable to the new model you want to automatically pull.
+
+    ```bash
+    # In the ensure_model_exists() function:
+    MODEL_NAME="gemma2:9b" # Or "phi3", "llama3:70b", etc.
+    ```
+
+2.  **In `app.py`**, update the `model` parameter in the `get_llm` function to match.
+
+    ```python
+    # In the get_llm function:
+    def get_llm():
+        return ChatOllama(model="gemma2:9b", ...)
+    ```
+
+3.  Rebuild and restart the application with `docker-compose up --build`.
+
+## Project Files
+
+  * `docker-compose.yml`: Defines and orchestrates the `ollama` and `medquery-app` services.
+  * `Dockerfile`: Instructs Docker on how to build the Python/Streamlit application image.
+  * `entrypoint.sh`: A startup script that waits for the Ollama server and automatically pulls the required model before launching the app.
+  * `app.py`: The core Streamlit application code, containing the UI and LangChain agent logic.
+  * `requirements.txt`: A list of the Python packages required for the application.

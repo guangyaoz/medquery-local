@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # Service 1: Ollama Server (no healthcheck needed now)
+  ollama:
+    image: ollama/ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
+    container_name: ollama
+
+  # Service 2: Your Streamlit Application (using the new Dockerfile)
+  medquery-app:
+    build: . # This will now use the Dockerfile in the current directory
+    ports:
+      - "8501:8501"
+    depends_on:
+      - ollama 
+
+# Named volume to persist Ollama models
+volumes:
+  ollama_data:
